@@ -18,8 +18,11 @@ clock = pygame.time.Clock()
 FPS = 60
 
 # game variables
+SCROLL_THRESH = 200
 GRAVITY = 1
 MAX_PLATFORMS = 10
+scroll = 0
+bg_scroll = 0
 
 # define colours
 WHITE = (255, 255, 255)
@@ -28,6 +31,12 @@ WHITE = (255, 255, 255)
 jumpy_image = pygame.image.load('assets/jump.png').convert_alpha()
 bg_image = pygame.image.load('assets/bg.png').convert_alpha()
 platform_image = pygame.image.load('assets/wood.png').convert_alpha()
+
+
+# function for drawing the backgound
+def draw_bg(bg_scroll):
+    screen.blit(bg_image, (0, 0 + bg_scroll))
+    screen.blit(bg_image, (0, -600 + bg_scroll))
 
 
 # player class
@@ -42,7 +51,9 @@ class Player:
         self.flip = False
 
     def move(self):
+        global scroll
         # reset variables
+        scroll = 0
         dx = 0
         dy = 0
 
@@ -82,9 +93,15 @@ class Player:
             # bounce off the ground
             self.vel_y = -20
 
+        # check if player has bounced to the top of the screen
+        if self.rect.top < SCROLL_THRESH:
+            # if player is  jumping
+            if self.vel_y < 0:
+                scroll = -dy
+
         # update rectangle position
         self.rect.x += dx
-        self.rect.y += dy
+        self.rect.y += dy + scroll
 
     def draw(self):
 
@@ -101,6 +118,10 @@ class Platform(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+    def update(self):
+        # update platform's vertical position
+        self.rect.y += scroll
+
 
 # player instance
 jumpy = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 150)
@@ -110,9 +131,10 @@ platform_group = pygame.sprite.Group()
 
 # create temporary platforms
 for p in range(MAX_PLATFORMS):
+    print("Adding platforms")
     p_w = random.randint(40, 60)
     p_x = random.randint(0, SCREEN_HEIGHT - p_w)
-    p_y = p * random.randint(80, 120)
+    p_y = p * random.randint(80, 120) - 700
     platform = Platform(p_x, p_y, p_w)
     platform_group.add(platform)
 
@@ -125,8 +147,15 @@ while run:
     jumpy.move()
 
     # draw background
-    screen.blit(bg_image, (0, 0))
+    bg_scroll += scroll
+    if bg_scroll >= bg_image.get_height():
+        bg_scroll = 0
+    draw_bg(bg_scroll)
+    # draw temporary scroll threshold
+    pygame.draw.line(screen, WHITE, (0, SCROLL_THRESH), (SCREEN_WIDTH, SCROLL_THRESH))
 
+    # update platforms
+    platform_group.update()
     # draw sprites
     platform_group.draw(screen)
     jumpy.draw()
