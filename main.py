@@ -122,6 +122,10 @@ class Platform(pygame.sprite.Sprite):
         # update platform's vertical position
         self.rect.y += scroll
 
+        # check if platform has gone off the screen
+        if self.rect.top > SCREEN_HEIGHT:
+            self.kill()
+
 
 # player instance
 jumpy = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 150)
@@ -129,14 +133,9 @@ jumpy = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 150)
 # create sprite groups
 platform_group = pygame.sprite.Group()
 
-# create temporary platforms
-for p in range(MAX_PLATFORMS):
-    print("Adding platforms")
-    p_w = random.randint(40, 60)
-    p_x = random.randint(0, SCREEN_HEIGHT - p_w)
-    p_y = p * random.randint(80, 120) - 700
-    platform = Platform(p_x, p_y, p_w)
-    platform_group.add(platform)
+# create starting platform
+platform = Platform(SCREEN_WIDTH // 2 - 50, SCREEN_HEIGHT - 50, 100)
+platform_group.add(platform)
 
 # game loop
 run = True
@@ -151,8 +150,15 @@ while run:
     if bg_scroll >= bg_image.get_height():
         bg_scroll = 0
     draw_bg(bg_scroll)
-    # draw temporary scroll threshold
-    pygame.draw.line(screen, WHITE, (0, SCROLL_THRESH), (SCREEN_WIDTH, SCROLL_THRESH))
+
+    # generate platforms
+    if len(platform_group) < MAX_PLATFORMS:
+        p_w = random.randint(40, 60)
+        p_x = random.randint(0, SCREEN_WIDTH - p_w)
+        p_y = platform.rect.y - random.randint(80, 120)
+        platform = Platform(p_x, p_y, p_w)
+        platform_group.add(platform)
+        platform_group.add(platform)
 
     # update platforms
     platform_group.update()
